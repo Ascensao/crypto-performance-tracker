@@ -1,5 +1,6 @@
 # download-qflow-data.py
-# Version 1.0.1 - Correções aplicadas
+# Version 1.0.2 - Changed price files location to "price_data" folder
+# 2025-08-24
 
 import requests
 import pandas as pd
@@ -8,7 +9,7 @@ from datetime import datetime
 
 BASE = "https://api.geckoterminal.com/api/v2"
 POOL = "2utzyuC6hzPXyzMAW9dNhr3oB11H2GLkrfCsdMfKMp6r"
-CSV_FILE = "qflow_price_history.csv"
+CSV_FILE = os.path.join("price_data", "qflow_price_history.csv")
 
 def get_qflow_history(pool_address, network="solana", timeframe="day"):
     url = f"{BASE}/networks/{network}/pools/{pool_address}/ohlcv/{timeframe}"
