@@ -52,37 +52,37 @@ def get_date_range():
             if choice == "1":
                 start_date = today - timedelta(days=1)
                 end_date = today
-                period_name = "1 Dia"
+                period_name = "1 Day"
                 break
             elif choice == "2":
                 start_date = today - timedelta(days=7)
                 end_date = today
-                period_name = "1 Semana"
+                period_name = "1 Week"
                 break
             elif choice == "3":
                 start_date = today - timedelta(days=15)
                 end_date = today
-                period_name = "15 Dias"
+                period_name = "15 Days"
                 break
             elif choice == "4":
                 start_date = today - timedelta(days=30)
                 end_date = today
-                period_name = "1 Mês"
+                period_name = "1 Month"
                 break
             elif choice == "5":
                 start_date = today - timedelta(days=90)
                 end_date = today
-                period_name = "3 Meses"
+                period_name = "3 Months"
                 break
             elif choice == "6":
                 start_date = today - timedelta(days=180)
                 end_date = today
-                period_name = "6 Meses"
+                period_name = "6 Months"
                 break
             elif choice == "7":
                 start_date = today - timedelta(days=365)
                 end_date = today
-                period_name = "1 Ano"
+                period_name = "1 Year"
                 break
             elif choice == "8":
                 files = glob.glob(os.path.join(DATA_DIR, "*_price_history.csv"))
@@ -100,7 +100,7 @@ def get_date_range():
                 if earliest_date:
                     start_date = earliest_date
                     end_date = today
-                    period_name = "Desde o início"
+                    period_name = "All Time"
                 else:
                     print("❌ Erro ao encontrar dados históricos")
                     continue
@@ -118,7 +118,7 @@ def get_date_range():
                         print("❌ A data de início deve ser anterior à data de fim")
                         continue
                         
-                    period_name = f"{start_date} a {end_date}"
+                    period_name = f"{start_date} to {end_date}"
                 except:
                     print("❌ Formato de data inválido. Use YYYY-MM-DD")
                     continue
@@ -170,6 +170,9 @@ def process_and_plot_data(start_date, end_date, period_name):
             df = df.set_index("date").sort_index()
             
             name = os.path.basename(file).replace("_price_history.csv", "").capitalize()
+            # Renomear Qflow para Quantum Flow
+            if name.lower() == "qflow":
+                name = "Quantum Flow"
             
             full_range = pd.date_range(start=start_date, end=end_date, freq='D')
             df = df.reindex(full_range, method='ffill')
@@ -231,16 +234,16 @@ def process_and_plot_data(start_date, end_date, period_name):
     # Configuração do estilo profissional
     plt.style.use('seaborn-v0_8-darkgrid')
     
-    # Cores gradientes profissionais
+    # Cores gradientes profissionais - TROCADAS Ethereum e Solana
     custom_colors = {
-        "Bitcoin": "#FF6B35",    # Laranja vibrante
-        "Ethereum": "#3B82F6",   # Azul moderno
-        "Solana": "#10B981",     # Verde menta
-        "Qflow": "#8B5CF6"       # Roxo premium
+        "Bitcoin": "#FF6B35",      # Laranja vibrante
+        "Ethereum": "#10B981",     # Verde menta (trocado com Solana)
+        "Solana": "#3B82F6",       # Azul moderno (trocado com Ethereum)
+        "Quantum Flow": "#8B5CF6"  # Roxo premium
     }
     
     # Criar figura com layout profissional
-    fig = plt.figure(figsize=(16, 10))
+    fig = plt.figure(figsize=(18, 10))  # Aumentado de 16 para 18 de largura
     gs = fig.add_gridspec(3, 2, height_ratios=[2.5, 0.8, 0.5], width_ratios=[3, 1], hspace=0.3, wspace=0.2)
     
     # Gráfico principal
@@ -257,7 +260,7 @@ def process_and_plot_data(start_date, end_date, period_name):
     for i, col in enumerate(returns_df.columns):
         color = custom_colors.get(col, f"C{i}")
         y = returns_df[col]
-        is_qflow = col.lower() == "qflow"
+        is_quantum = col == "Quantum Flow"
         
         # Efeito glow
         for glow_width in [8, 5, 3]:
@@ -269,36 +272,67 @@ def process_and_plot_data(start_date, end_date, period_name):
             returns_df.index, y,
             label=col,
             color=color,
-            linewidth=3.5 if is_qflow else 2.5,
+            linewidth=3.5 if is_quantum else 2.5,
             alpha=0.95,
             zorder=2
         )[0]
         
         # Marcador no último ponto
         ax_main.scatter(returns_df.index[-1], y.iloc[-1], 
-                       color=color, s=150 if is_qflow else 100, 
-                       zorder=3, edgecolors='white', linewidth=2)
+                        color=color, s=150 if is_quantum else 100, 
+                        zorder=3, edgecolors='white', linewidth=2)
         
-        # Label do valor final com caixa estilizada
+        # Calcular posição mais inteligente para as labels
+        x_pos = returns_df.index[-1]
+        y_pos = y.iloc[-1]
+        
+        # Ajustar horizontalmente para evitar corte
+        # Em vez de adicionar dias, usar coordenadas de dados mais precisas
+        x_offset = pd.Timedelta(hours=6)  # Offset menor
+        
+        # Ajustar verticalmente para evitar sobreposição
+        label_spacing = 2.5  # Espaçamento vertical entre labels
+        sorted_final_values = sorted([(col, returns_df[col].iloc[-1]) for col in returns_df.columns], 
+                                    key=lambda x: x[1], reverse=True)
+        
+        # Encontrar a posição desta crypto na lista ordenada
+        position_index = next(i for i, (name, _) in enumerate(sorted_final_values) if name == col)
+        
+        # Se as labels estão muito próximas, ajustar verticalmente
+        if len(returns_df.columns) > 1:
+            y_range = returns_df.iloc[-1].max() - returns_df.iloc[-1].min()
+            if y_range < 10:  # Se a diferença entre valores finais é pequena
+                # Distribuir labels verticalmente
+                base_y = returns_df.iloc[-1].mean()
+                y_pos = base_y + (position_index - len(returns_df.columns)/2 + 0.5) * label_spacing
+        
+        # Label do valor final com caixa estilizada - posição corrigida
         bbox_props = dict(boxstyle="round,pad=0.3", 
-                         facecolor=color, alpha=0.8, 
-                         edgecolor='white', linewidth=1)
-        ax_main.text(
-            returns_df.index[-1] + pd.Timedelta(days=1),
-            y.iloc[-1],
-            f"{col}: {y.iloc[-1]:+.1f}%",
+                        facecolor=color, alpha=0.8, 
+                        edgecolor='white', linewidth=1)
+        
+        label_text = ax_main.text(
+            x_pos + x_offset,  # Posição X ajustada
+            y_pos,             # Posição Y ajustada
+            f"{col}: {returns_df[col].iloc[-1]:+.1f}%",
             color='white',
-            fontsize=11 if is_qflow else 10,
+            fontsize=11 if is_quantum else 10,
             fontweight='bold',
             va='center',
-            bbox=bbox_props
+            ha='left',  # Adicionado alinhamento horizontal
+            bbox=bbox_props,
+            clip_on=False  # Importante: permite que o texto apareça fora da área do plot
         )
     
     # Configuração do gráfico principal
-    ax_main.set_title(f"📊 PERFORMANCE COMPARISON - {period_name.upper()}", 
+    ax_main.set_title(f"PERFORMANCE COMPARISON - {period_name.upper()}", 
                      fontsize=20, fontweight='bold', color='white', pad=20)
     ax_main.set_xlabel("Date", fontsize=14, color='#CCCCCC')
     ax_main.set_ylabel("Cumulative Return (%)", fontsize=14, color='#CCCCCC')
+    
+    # Mudar cor dos valores dos eixos para branco
+    ax_main.tick_params(axis='x', colors='white')
+    ax_main.tick_params(axis='y', colors='white')
     
     # Grid estilizado
     ax_main.grid(True, linestyle='--', alpha=0.2, color='#444444')
@@ -310,6 +344,10 @@ def process_and_plot_data(start_date, end_date, period_name):
     legend.get_frame().set_facecolor('#1A1A1A')
     legend.get_frame().set_alpha(0.9)
     legend.get_frame().set_edgecolor('#444444')
+    
+    # Mudar cor do texto da legenda para branco
+    for text in legend.get_texts():
+        text.set_color('white')
     
     # Adicionar linha de tendência suave para o melhor performer
     best_performer = returns_df.iloc[-1].idxmax()
@@ -329,7 +367,7 @@ def process_and_plot_data(start_date, end_date, period_name):
     headers = ['Asset', 'Return', 'Max DD', 'Sharpe', 'Status']
     
     for data in sorted(summary_data, key=lambda x: x['return_pct'], reverse=True):
-        status = "🚀" if data['return_pct'] > 50 else "📈" if data['return_pct'] > 0 else "📉"
+        status = "↑" if data['return_pct'] > 50 else "+" if data['return_pct'] > 0 else "↓"
         table_data.append([
             data['name'],
             f"{data['return_pct']:+.2f}%",
@@ -353,7 +391,10 @@ def process_and_plot_data(start_date, end_date, period_name):
     
     for i in range(1, len(table_data) + 1):
         for j in range(len(headers)):
-            if i == 1:  # Melhor performer
+            # Highlight para Quantum Flow sempre
+            if table_data[i-1][0] == "Quantum Flow":
+                table[(i, j)].set_facecolor('#3B1E6B')  # Roxo escuro para Quantum Flow
+            elif i == 1 and table_data[0][0] != "Quantum Flow":  # Melhor performer (se não for Quantum Flow)
                 table[(i, j)].set_facecolor('#1B4332')
             else:
                 table[(i, j)].set_facecolor('#1A1A1A')
@@ -364,14 +405,25 @@ def process_and_plot_data(start_date, end_date, period_name):
     ax_footer.axis('off')
     
     day_count = (end_date - start_date).days + 1
-    footer_text = (f"📅 Period: {start_date} to {end_date} ({day_count} days) | "
-                  f"🏆 Best: {best_performer} ({returns_df[best_performer].iloc[-1]:+.1f}%) | "
+    footer_text = (f"Period: {start_date} to {end_date} ({day_count} days) | "
+                  f"Best: {best_performer} ({returns_df[best_performer].iloc[-1]:+.1f}%) | "
                   f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     
     ax_footer.text(0.5, 0.5, footer_text, ha='center', va='center',
                   fontsize=12, color='#888888', style='italic',
                   bbox=dict(boxstyle="round,pad=0.5", facecolor='#1A1A1A', 
                            edgecolor='#444444', alpha=0.8))
+    
+    x_min, x_max = ax_main.get_xlim()
+    y_min, y_max = ax_main.get_ylim()
+
+    # Expandir limite direito para acomodar as labels
+    x_padding = (x_max - x_min) * 0.15  # 15% de padding à direita
+    ax_main.set_xlim(x_min, x_max + x_padding)
+
+    # Expandir limites verticais se necessário
+    y_padding = (y_max - y_min) * 0.05  # 5% de padding vertical
+    ax_main.set_ylim(y_min - y_padding, y_max + y_padding)
     
     # Configuração geral da figura
     fig.patch.set_facecolor('#0A0A0A')
@@ -386,6 +438,7 @@ def process_and_plot_data(start_date, end_date, period_name):
     
     print(f"\n✅ Gráfico guardado como: {filename}")
     plt.show()
+
     
     return True
 
