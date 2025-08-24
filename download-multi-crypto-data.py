@@ -1,5 +1,5 @@
 # download-multi-crypto-data.py
-# Version 1.0.1 - Correções aplicadas
+# Version 1.0.2 - Changed proce files location to "price_data" folder
 
 import requests
 import pandas as pd
@@ -27,7 +27,7 @@ coins = {
 }
 
 for nome, coin_id in coins.items():
-    file_name = f"{nome}_price_history.csv"
+    file_name = os.path.join("price_data", f"{nome}_price_history.csv")
     
     # Verificar se o CSV já existe
     if os.path.exists(file_name):
