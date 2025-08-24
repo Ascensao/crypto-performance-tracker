@@ -1,16 +1,22 @@
+# check_tedency_and_drawdown.py
+# Version 1.0.0 - Initial version
+# 2025-08-24
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
+DATA_DIR = "price_data"
+
 # ──────────── Selecionar ficheiro ────────────
 print("Ficheiros disponíveis:")
-files = [f for f in os.listdir() if f.endswith("_price_history.csv")]
+files = [f for f in os.listdir(DATA_DIR) if f.endswith("_price_history.csv")]
 for i, file in enumerate(files):
     print(f"{i + 1}: {file}")
 
 choice = input("Escolhe um número: ")
 try:
-    selected_file = files[int(choice) - 1]
+    selected_file = os.path.join(DATA_DIR, files[int(choice) - 1])
 except:
     print("❌ Escolha inválida.")
     exit()
