@@ -1,5 +1,5 @@
 # compare_returns.py
-# Version 2.0.0 - Loop menu + Enhanced graphics
+# Version 2.0.1 - Some visual issues fixed.
 # 2025-08-24
 
 import pandas as pd
