@@ -1,9 +1,20 @@
+# compare_returns.py
+# Version 1.0.0 - Initial version
+# 2025-08-24
+
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import glob
 import os
+
+# ──────────── Diretório dos dados ────────────
+DATA_DIR = "price_data"
+if not os.path.exists(DATA_DIR):
+    print(f"❌ Pasta {DATA_DIR} não encontrada. Corre primeiro os scripts de download.")
+    exit()
 
 # ──────────── 📆 INPUT ────────────
 start_date = input("Start date (YYYY-MM-DD): ")
@@ -17,9 +28,9 @@ except:
     exit()
 
 # ──────────── 📁 LER DADOS ────────────
-files = glob.glob("*_price_history.csv")
+files = glob.glob(os.path.join(DATA_DIR, "*_price_history.csv"))
 if not files:
-    print("❌ No CSV files found.")
+    print("❌ No CSV files found in", DATA_DIR)
     exit()
 
 all_returns = {}
@@ -29,7 +40,7 @@ summary = []
 def calculate_drawdown(series):
     peak = series.cummax()
     drawdown = (series - peak) / peak
-    return drawdown.min() * 100  # em %
+    return drawdown.min() * 100  # %
 
 def calculate_sharpe(series):
     daily_ret = series.pct_change().dropna()
@@ -76,14 +87,12 @@ for file in files:
 # ──────────── RESUMO NO TERMINAL ────────────
 print("\n📈 Performance Summary:\n")
 
-# Cabeçalho
 print(
     f"{'Asset':<10} | {'Start Price':>12} | {'End Price':>12} | {'Return':>8} | "
     f"{'Max Return':>11} | {'Max DD':>9} | {'Sharpe':>7}"
 )
 print("-" * 80)
 
-# Linhas
 for file in files:
     try:
         name = os.path.basename(file).replace("_price_history.csv", "").capitalize()
@@ -112,7 +121,7 @@ for file in files:
             f"{sharpe:>6.2f}"
         )
 
-    except Exception as e:
+    except Exception:
         continue
 
 # ──────────── GRÁFICO ────────────
@@ -123,7 +132,6 @@ if not all_returns:
 returns_df = pd.DataFrame(all_returns)
 returns_df.index.name = "Date"
 
-# Estilo escuro
 plt.style.use('dark_background')
 mpl.rcParams.update({
     'axes.facecolor': '#1e1e1e',
@@ -142,12 +150,11 @@ mpl.rcParams.update({
     'lines.linewidth': 2.2
 })
 
-# Cores definidas por ativo
 custom_colors = {
-    "Bitcoin": "#ff4d4d",   # vermelho
-    "Ethereum": "#32cd32",  # verde
-    "Solana": "#1e90ff",    # azul
-    "Qflow": "#c084fc"      # roxo
+    "Bitcoin": "#ff4d4d",
+    "Ethereum": "#32cd32",
+    "Solana": "#1e90ff",
+    "Qflow": "#c084fc"
 }
 
 plt.figure(figsize=(14, 7))
@@ -171,7 +178,6 @@ for i, col in enumerate(returns_df.columns):
     last_value = y.iloc[-1]
     y_max = max(y_max, last_value)
 
-    # Offset ajustado
     offset = 0.5 + (i % 3) * 0.6
     ax.text(
         returns_df.index[-1],
@@ -184,7 +190,6 @@ for i, col in enumerate(returns_df.columns):
         va='center'
     )
 
-# Limite vertical ajustado com margem
 plt.ylim(None, y_max + 6)
 
 day_count = (end_date - start_date).days + 1
@@ -195,6 +200,5 @@ plt.grid(True, linestyle='--', alpha=0.3)
 plt.legend(frameon=True, facecolor='#2e2e2e', edgecolor='#aaaaaa', loc='upper left')
 plt.tight_layout()
 
-# Exportar imagem
 plt.savefig("returns_chart.png", dpi=150)
 plt.show()
