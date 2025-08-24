@@ -1,5 +1,6 @@
 # download-multi-crypto-data.py
 # Version 1.0.2 - Changed proce files location to "price_data" folder
+# 2025-08-24
 
 import requests
 import pandas as pd
