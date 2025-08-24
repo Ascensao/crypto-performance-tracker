@@ -1,5 +1,5 @@
 # check_tedency_and_drawdown.py
-# Version 1.0.0 - Initial version
+# Version 1.0.1 - Changed price files location to "price_data" folder
 # 2025-08-24
 
 import pandas as pd
